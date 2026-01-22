@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="gl">
+<head>
+  <meta charset="UTF-8">
+  <title>Minibasket - Marcador</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f2f2f2;
+      margin: 0;
+      padding: 10px;
+    }
+
+    h1 {
+      margin: 10px 0;
+    }
+
+    .config, .tempo {
+      background: white;
+      padding: 15px;
+      margin: 10px auto;
+      width: 95%;
+      max-width: 480px;
+      border-radius: 10px;
+    }
+
+    .marcador {
+      display: flex;
+      justify-content: space-around;
+      margin: 20px 0;
+    }
+
+    .equipo {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      width: 45%;
+    }
+
+    .puntos {
+      font-size: 70px;
+      margin: 10px 0;
+    }
+
+    .cronometro {
+      font-size: 48px;
+      margin: 10px 0;
+    }
+
+    .controles button {
+      font-size: 18px;
+      margin: 4px;
+      padding: 10px 14px;
+    }
+
+    input[type="text"] {
+      font-size: 16px;
+      width: 160px;
+      text-align: center;
+    }
+
+    input[type="number"] {
+      font-size: 16px;
+      width: 70px;
+      text-align: center;
+    }
+
+    input[type="color"] {
+      width: 50px;
+      height: 35px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .fullscreen {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      font-size: 14px;
+    }
+
+    /* ---- MODO SÓ MARCADOR ---- */
+    .so-marcador .config {
+      display: none;
+    }
+
+    .so-marcador .puntos {
+      font-size: 110px;
+    }
+
+    .so-marcador .cronometro {
+      font-size: 60px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Minibasket</h1>
+
+<div class="config">
+  <h3>Configuración do partido</h3>
+
+  <strong>Equipo local:</strong> ROSALÍA <br><br>
+
+  Equipo visitante:
+  <input type="text" id="nomeB" value="Equipo B">
+  Cor:
+  <input type="color" id="corB" value="#dc3545"><br><br>
+
+  Tempos:
+  <input type="number" id="totalTempos" value="6" min="1"><br><br>
+
+  Minutos por tempo:
+  <input type="number" id="minutosTempo" value="8" min="1"><br><br>
+
+  <button onclick="iniciarPartido()">Iniciar partido</button>
+</div>
+
+<div class="tempo">
+  <div>
+    Tempo:
+    <span id="tempoActual">-</span> /
+    <span id="temposMax">-</span>
+  </div>
+
+  <div class="cronometro" id="cronometro">00:00</div>
+
+  <button onclick="iniciarCrono()">▶️ Iniciar</button>
+  <button onclick="pausarCrono()">⏸️ Pausar</button>
+  <button onclick="seguinteTempo()">⏭️ Seguinte tempo</button>
+</div>
+
+<div class="marcador">
+  <div class="equipo">
+    <h2 id="labelA">ROSALÍA</h2>
+    <div class="puntos" id="puntosA">0</div>
+    <div class="controles">
+      <button onclick="sumar('A',1)">+1</button>
+      <button onclick="sumar('A',2)">+2</button>
+      <button onclick="sumar('A',3)">+3</button>
+      <button onclick="restar('A')">-1</button>
+    </div>
+  </div>
+
+  <div class="equipo">
+    <h2 id="labelB">Equipo B</h2>
+    <div class="puntos" id="puntosB">0</div>
+    <div class="controles">
+      <button onclick="sumar('B',1)">+1</button>
+      <button onclick="sumar('B',2)">+2</button>
+      <button onclick="sumar('B',3)">+3</button>
+      <button onclick="restar('B')">-1</button>
+    </div>
+  </div>
+</div>
+
+<button onclick="toggleSoMarcador()">👁 Só marcador</button>
+<button class="fullscreen" onclick="toggleFullscreen()">⛶ Pantalla completa</button>
+
+<script>
+  let puntosA = 0;
+  let puntosB = 0;
+
+  let tempoActual = 0;
+  let totalTempos = 0;
+  let duracionTempo = 0;
+
+  let segundosRestantes = 0;
+  let intervalo = null;
+  let soMarcador = false;
+
+  function iniciarPartido() {
+    totalTempos = parseInt(document.getElementById('totalTempos').value);
+    duracionTempo = parseInt(document.getElementById('minutosTempo').value) * 60;
+
+    const nomeB = document.getElementById('nomeB').value || 'Equipo B';
+    const corB = document.getElementById('corB').value;
+
+    document.getElementById('labelA').innerText = 'ROSALÍA';
+    document.getElementById('labelA').style.color = '#FFD700';
+    document.getElementById('puntosA').style.color = '#FFD700';
+
+    document.getElementById('labelB').innerText = nomeB;
+    document.getElementById('labelB').style.color = corB;
+    document.getElementById('puntosB').style.color = corB;
+
+    tempoActual = 1;
+    document.getElementById('tempoActual').innerText = tempoActual;
+    document.getElementById('temposMax').innerText = totalTempos;
+
+    reiniciarCrono();
+  }
+
+  function reiniciarCrono() {
+    pausarCrono();
+    segundosRestantes = duracionTempo;
+    actualizarCrono();
+  }
+
+  function iniciarCrono() {
+    if (intervalo) return;
+
+    intervalo = setInterval(() => {
+      if (segundosRestantes > 0) {
+        segundosRestantes--;
+        actualizarCrono();
+      } else {
+        pausarCrono();
+        alert("¡Fin do tempo!");
+      }
+    }, 1000);
+  }
+
+  function pausarCrono() {
+    clearInterval(intervalo);
+    intervalo = null;
+  }
+
+  function actualizarCrono() {
+    let min = Math.floor(segundosRestantes / 60);
+    let seg = segundosRestantes % 60;
+    document.getElementById('cronometro').innerText =
+      String(min).padStart(2, '0') + ":" + String(seg).padStart(2, '0');
+  }
+
+  function seguinteTempo() {
+    if (tempoActual < totalTempos) {
+      tempoActual++;
+      document.getElementById('tempoActual').innerText = tempoActual;
+      reiniciarCrono();
+    } else {
+      alert("¡Partido rematado!");
+    }
+  }
+
+  function sumar(equipo, puntos) {
+    if (equipo === 'A') {
+      puntosA += puntos;
+      document.getElementById('puntosA').innerText = puntosA;
+    } else {
+      puntosB += puntos;
+      document.getElementById('puntosB').innerText = puntosB;
+    }
+  }
+
+  function restar(equipo) {
+    if (equipo === 'A' && puntosA > 0) {
+      puntosA--;
+      document.getElementById('puntosA').innerText = puntosA;
+    }
+    if (equipo === 'B' && puntosB > 0) {
+      puntosB--;
+      document.getElementById('puntosB').innerText = puntosB;
+    }
+  }
+
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  }
+
+  function toggleSoMarcador() {
+    soMarcador = !soMarcador;
+    document.body.classList.toggle('so-marcador', soMarcador);
+  }
+</script>
+
+</body>
+</html>
