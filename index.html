@@ -232,6 +232,7 @@
     } else {
       alert("¡Partido rematado!");
     }
+    enviarAFirebase();
   }
 
   function sumar(equipo, puntos) {
@@ -242,6 +243,7 @@
       puntosB += puntos;
       document.getElementById('puntosB').innerText = puntosB;
     }
+    enviarAFirebase();
   }
 
   function restar(equipo) {
@@ -253,6 +255,7 @@
       puntosB--;
       document.getElementById('puntosB').innerText = puntosB;
     }
+    enviarAFirebase();
   }
 
   function toggleFullscreen() {
@@ -326,5 +329,6 @@
 
 </body>
 </html>
+
 
 
