@@ -2,7 +2,8 @@
 <html lang="gl">
 <head>
   <meta charset="UTF-8">
-  <title>Minibasket - Marcador</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minibasket - Marcador en Vivo</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -12,9 +13,7 @@
       padding: 10px;
     }
 
-    h1 {
-      margin: 10px 0;
-    }
+    h1 { margin: 10px 0; color: #333; }
 
     .config, .tempo {
       background: white;
@@ -23,6 +22,7 @@
       width: 95%;
       max-width: 480px;
       border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
 
     .marcador {
@@ -36,105 +36,79 @@
       padding: 20px;
       border-radius: 10px;
       width: 45%;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
 
     .puntos {
       font-size: 70px;
+      font-weight: bold;
       margin: 10px 0;
     }
 
     .cronometro {
       font-size: 48px;
+      font-family: monospace;
       margin: 10px 0;
+      color: #444;
     }
 
     .controles button {
       font-size: 18px;
       margin: 4px;
       padding: 10px 14px;
-    }
-
-    input[type="text"] {
-      font-size: 16px;
-      width: 160px;
-      text-align: center;
-    }
-
-    input[type="number"] {
-      font-size: 16px;
-      width: 70px;
-      text-align: center;
-    }
-
-    input[type="color"] {
-      width: 50px;
-      height: 35px;
-      border: none;
       cursor: pointer;
     }
 
-    .fullscreen {
-      position: fixed;
-      bottom: 10px;
-      right: 10px;
-      font-size: 14px;
+    .btn-reset {
+      background-color: #ffeded;
+      color: #d9534f;
+      border: 1px solid #d9534f;
+      margin-top: 10px;
+    }
+
+    input[type="text"], input[type="number"] {
+      font-size: 16px;
+      padding: 5px;
+      text-align: center;
     }
 
     /* ---- MODO SÓ MARCADOR ---- */
-    .so-marcador .config {
+    .so-marcador .config, .so-marcador .controles, .so-marcador h1 {
       display: none;
     }
-
-    .so-marcador .puntos {
-      font-size: 110px;
-    }
-
-    .so-marcador .cronometro {
-      font-size: 60px;
-    }
+    .so-marcador .puntos { font-size: 120px; }
+    .so-marcador .equipo { width: 48%; }
+    .so-marcador .cronometro { font-size: 80px; }
   </style>
 </head>
 <body>
 
-<h1>Minibasket</h1>
+<h1>Minibasket Rosalía</h1>
 
 <div class="config">
   <h3>Configuración do partido</h3>
-
-  <strong>Equipo local:</strong> ROSALÍA <br><br>
-
-  Equipo visitante:
-  <input type="text" id="nomeB" value="Equipo B">
-  Cor:
-  <input type="color" id="corB" value="#dc3545"><br><br>
-
-  Tempos:
-  <input type="number" id="totalTempos" value="6" min="1"><br><br>
-
-  Minutos por tempo:
-  <input type="number" id="minutosTempo" value="8" min="1"><br><br>
-
-  <button onclick="iniciarPartido()">Iniciar partido</button>
+  <strong>Local:</strong> ROSALÍA (Amarelo) <br><br>
+  Visitante: <input type="text" id="nomeB" value="Equipo B">
+  Cor: <input type="color" id="corB" value="#dc3545"><br><br>
+  Tempos: <input type="number" id="totalTempos" value="6" min="1">
+  Minutos: <input type="number" id="minutosTempo" value="8" min="1"><br><br>
+  <button onclick="iniciarPartido()" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px;">Iniciar partido</button>
 </div>
 
 <div class="tempo">
   <div>
-    Tempo:
-    <span id="tempoActual">-</span> /
-    <span id="temposMax">-</span>
+    Tempo: <span id="tempoActual">-</span> / <span id="temposMax">-</span>
   </div>
-
   <div class="cronometro" id="cronometro">00:00</div>
-
-  <button onclick="iniciarCrono()">▶️ Iniciar</button>
-  <button onclick="pausarCrono()">⏸️ Pausar</button>
+  <button onclick="iniciarCrono()">▶️</button>
+  <button onclick="pausarCrono()">⏸️</button>
   <button onclick="seguinteTempo()">⏭️ Seguinte tempo</button>
 </div>
 
 <div class="marcador">
   <div class="equipo">
     <h2 id="labelA">ROSALÍA</h2>
-    <div class="puntos" id="puntosA">0</div>
+    <div class="puntos" id="puntosA" style="color: #FFD700;">0</div>
     <div class="controles">
       <button onclick="sumar('A',1)">+1</button>
       <button onclick="sumar('A',2)">+2</button>
@@ -155,56 +129,54 @@
   </div>
 </div>
 
-<button onclick="toggleSoMarcador()">👁 Só marcador</button>
-<button class="fullscreen" onclick="toggleFullscreen()">⛶ Pantalla completa</button>
+<div style="margin-bottom: 50px;">
+    <button onclick="toggleSoMarcador()">👁 Só marcador (Modo TV)</button>
+    <button onclick="limparMarcador()" class="btn-reset">🗑️ Reset Total</button>
+</div>
 
 <script>
-  let puntosA = 0;
-  let puntosB = 0;
-
-  let tempoActual = 0;
-  let totalTempos = 0;
-  let duracionTempo = 0;
-
-  let segundosRestantes = 0;
+  // Variables globales (usamos window para que Firebase las vea)
+  window.puntosA = 0;
+  window.puntosB = 0;
+  window.tempoActual = 0;
+  window.totalTempos = 0;
+  window.duracionTempo = 0;
+  window.segundosRestantes = 0;
+  
   let intervalo = null;
   let soMarcador = false;
 
   function iniciarPartido() {
-    totalTempos = parseInt(document.getElementById('totalTempos').value);
-    duracionTempo = parseInt(document.getElementById('minutosTempo').value) * 60;
-
-    const nomeB = document.getElementById('nomeB').value || 'Equipo B';
-    const corB = document.getElementById('corB').value;
+    window.totalTempos = parseInt(document.getElementById('totalTempos').value);
+    window.duracionTempo = parseInt(document.getElementById('minutosTempo').value) * 60;
+    window.tempoActual = 1;
 
     document.getElementById('labelA').innerText = 'ROSALÍA';
-    document.getElementById('labelA').style.color = '#FFD700';
-    document.getElementById('puntosA').style.color = '#FFD700';
-
-    document.getElementById('labelB').innerText = nomeB;
-    document.getElementById('labelB').style.color = corB;
-    document.getElementById('puntosB').style.color = corB;
-
-    tempoActual = 1;
-    document.getElementById('tempoActual').innerText = tempoActual;
-    document.getElementById('temposMax').innerText = totalTempos;
+    document.getElementById('labelB').innerText = document.getElementById('nomeB').value;
+    document.getElementById('labelB').style.color = document.getElementById('corB').value;
+    document.getElementById('puntosB').style.color = document.getElementById('corB').value;
+    
+    document.getElementById('tempoActual').innerText = window.tempoActual;
+    document.getElementById('temposMax').innerText = window.totalTempos;
 
     reiniciarCrono();
+    if(window.enviarAFirebase) window.enviarAFirebase();
   }
 
   function reiniciarCrono() {
     pausarCrono();
-    segundosRestantes = duracionTempo;
+    window.segundosRestantes = window.duracionTempo;
     actualizarCrono();
   }
 
   function iniciarCrono() {
     if (intervalo) return;
-
     intervalo = setInterval(() => {
-      if (segundosRestantes > 0) {
-        segundosRestantes--;
+      if (window.segundosRestantes > 0) {
+        window.segundosRestantes--;
         actualizarCrono();
+        // Opcional: enviarAFirebase(); cada segundo consume mucha cuota, 
+        // mejor sincronizar solo al pausar o anotar.
       } else {
         pausarCrono();
         alert("¡Fin do tempo!");
@@ -215,54 +187,55 @@
   function pausarCrono() {
     clearInterval(intervalo);
     intervalo = null;
+    if(window.enviarAFirebase) window.enviarAFirebase();
   }
 
   function actualizarCrono() {
-    let min = Math.floor(segundosRestantes / 60);
-    let seg = segundosRestantes % 60;
-    document.getElementById('cronometro').innerText =
+    let min = Math.floor(window.segundosRestantes / 60);
+    let seg = window.segundosRestantes % 60;
+    document.getElementById('cronometro').innerText = 
       String(min).padStart(2, '0') + ":" + String(seg).padStart(2, '0');
   }
 
-  function seguinteTempo() {
-    if (tempoActual < totalTempos) {
-      tempoActual++;
-      document.getElementById('tempoActual').innerText = tempoActual;
+  function siguienteTempo() {
+    if (window.tempoActual < window.totalTempos) {
+      window.tempoActual++;
+      document.getElementById('tempoActual').innerText = window.tempoActual;
       reiniciarCrono();
+      if(window.enviarAFirebase) window.enviarAFirebase();
     } else {
       alert("¡Partido rematado!");
     }
-    enviarAFirebase();
   }
 
-  function sumar(equipo, puntos) {
-    if (equipo === 'A') {
-      puntosA += puntos;
-      document.getElementById('puntosA').innerText = puntosA;
-    } else {
-      puntosB += puntos;
-      document.getElementById('puntosB').innerText = puntosB;
-    }
-    enviarAFirebase();
+  function sumar(equipo, pts) {
+    if (equipo === 'A') window.puntosA += pts;
+    else window.puntosB += pts;
+    actualizarPantalla();
+    if(window.enviarAFirebase) window.enviarAFirebase();
   }
 
   function restar(equipo) {
-    if (equipo === 'A' && puntosA > 0) {
-      puntosA--;
-      document.getElementById('puntosA').innerText = puntosA;
-    }
-    if (equipo === 'B' && puntosB > 0) {
-      puntosB--;
-      document.getElementById('puntosB').innerText = puntosB;
-    }
-    enviarAFirebase();
+    if (equipo === 'A' && window.puntosA > 0) window.puntosA--;
+    else if (equipo === 'B' && window.puntosB > 0) window.puntosB--;
+    actualizarPantalla();
+    if(window.enviarAFirebase) window.enviarAFirebase();
   }
 
-  function toggleFullscreen() {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
-    } else {
-      document.exitFullscreen();
+  function actualizarPantalla() {
+    document.getElementById('puntosA').innerText = window.puntosA;
+    document.getElementById('puntosB').innerText = window.puntosB;
+  }
+
+  function limparMarcador() {
+    if(confirm("Seguro que queres reiniciar todo o marcador?")) {
+        window.puntosA = 0;
+        window.puntosB = 0;
+        window.tempoActual = 0;
+        actualizarPantalla();
+        document.getElementById('cronometro').innerText = "00:00";
+        document.getElementById('tempoActual').innerText = "-";
+        if(window.enviarAFirebase) window.enviarAFirebase();
     }
   }
 
@@ -270,9 +243,10 @@
     soMarcador = !soMarcador;
     document.body.classList.toggle('so-marcador', soMarcador);
   }
+</script>
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-  // Importamos lo necesario para la base de datos
   import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-database.js";
 
   const firebaseConfig = {
@@ -289,39 +263,38 @@
   const db = getDatabase(app);
   const estadoRef = ref(db, 'partido/actual');
 
-  // --- FUNCIÓN PARA ENVIAR DATOS ---
-  // La hacemos global para poder usarla en tus funciones de sumar/restar
+  // Función global para enviar datos
   window.enviarAFirebase = () => {
     set(estadoRef, {
-      puntosA: puntosA,
-      puntosB: puntosB,
+      puntosA: window.puntosA,
+      puntosB: window.puntosB,
       nomeB: document.getElementById('nomeB').value,
       corB: document.getElementById('corB').value,
-      tempoActual: tempoActual,
-      temposMax: totalTempos,
+      tempoActual: window.tempoActual,
+      temposMax: window.totalTempos,
       crono: document.getElementById('cronometro').innerText,
       timestamp: Date.now()
     });
   };
 
-  // --- FUNCIÓN PARA RECIBIR DATOS ---
-  // Esto se ejecuta solo cuando alguien más cambia los datos
+  // Escuchar cambios (para tu mujer)
   onValue(estadoRef, (snapshot) => {
     const data = snapshot.val();
     if (data) {
-      // Actualizamos las variables locales
-      puntosA = data.puntosA;
-      puntosB = data.puntosB;
-      tempoActual = data.tempoActual;
+      // Actualizamos variables internas
+      window.puntosA = data.puntosA;
+      window.puntosB = data.puntosB;
+      window.tempoActual = data.tempoActual;
+      window.totalTempos = data.temposMax;
 
-      // Actualizamos el HTML (lo que verá tu mujer)
+      // Actualizamos UI
       document.getElementById('puntosA').innerText = data.puntosA;
       document.getElementById('puntosB').innerText = data.puntosB;
       document.getElementById('labelB').innerText = data.nomeB;
       document.getElementById('labelB').style.color = data.corB;
       document.getElementById('puntosB').style.color = data.corB;
-      document.getElementById('tempoActual').innerText = data.tempoActual;
-      document.getElementById('temposMax').innerText = data.temposMax;
+      document.getElementById('tempoActual').innerText = data.tempoActual || "-";
+      document.getElementById('temposMax').innerText = data.temposMax || "-";
       document.getElementById('cronometro').innerText = data.crono;
     }
   });
@@ -329,6 +302,3 @@
 
 </body>
 </html>
-
-
-
