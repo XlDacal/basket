@@ -267,14 +267,11 @@
     soMarcador = !soMarcador;
     document.body.classList.toggle('so-marcador', soMarcador);
   }
-</script>
-  <script type="module">
-  // Import the functions you need from the SDKs you need
+<script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
+  // Importamos lo necesario para la base de datos
+  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-database.js";
 
-  // Your web app's Firebase configuration
   const firebaseConfig = {
     apiKey: "AIzaSyB61bwum1jdJUsKK7XTVtBhDl31tZlVl14",
     authDomain: "marcador-rosalia-c0043.firebaseapp.com",
@@ -285,10 +282,49 @@
     appId: "1:969819878631:web:08c69e28ae0b3f31afde42"
   };
 
-  // Initialize Firebase
   const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const estadoRef = ref(db, 'partido/actual');
+
+  // --- FUNCIÓN PARA ENVIAR DATOS ---
+  // La hacemos global para poder usarla en tus funciones de sumar/restar
+  window.enviarAFirebase = () => {
+    set(estadoRef, {
+      puntosA: puntosA,
+      puntosB: puntosB,
+      nomeB: document.getElementById('nomeB').value,
+      corB: document.getElementById('corB').value,
+      tempoActual: tempoActual,
+      temposMax: totalTempos,
+      crono: document.getElementById('cronometro').innerText,
+      timestamp: Date.now()
+    });
+  };
+
+  // --- FUNCIÓN PARA RECIBIR DATOS ---
+  // Esto se ejecuta solo cuando alguien más cambia los datos
+  onValue(estadoRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      // Actualizamos las variables locales
+      puntosA = data.puntosA;
+      puntosB = data.puntosB;
+      tempoActual = data.tempoActual;
+
+      // Actualizamos el HTML (lo que verá tu mujer)
+      document.getElementById('puntosA').innerText = data.puntosA;
+      document.getElementById('puntosB').innerText = data.puntosB;
+      document.getElementById('labelB').innerText = data.nomeB;
+      document.getElementById('labelB').style.color = data.corB;
+      document.getElementById('puntosB').style.color = data.corB;
+      document.getElementById('tempoActual').innerText = data.tempoActual;
+      document.getElementById('temposMax').innerText = data.temposMax;
+      document.getElementById('cronometro').innerText = data.crono;
+    }
+  });
 </script>
 
 </body>
 </html>
+
 
