@@ -5,81 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Minibasket - Marcador en Vivo</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background: #f2f2f2;
-      margin: 0;
-      padding: 10px;
-    }
-
-    /* OCULTAR CONTROLES POR DEFECTO */
-    .config, .controles, .btn-admin, .btn-reset {
-      display: none; 
-    }
-
-    /* CLASE PARA MOSTRAR CONTROLES (SOLO ADMIN) */
-    .modo-admin .config, 
-    .modo-admin .controles, 
-    .modo-admin .btn-admin,
-    .modo-admin .btn-reset {
-      display: block;
-    }
-
+    body { font-family: Arial, sans-serif; text-align: center; background: #f2f2f2; margin: 0; padding: 10px; }
+    .config, .controles, .btn-admin, .btn-reset { display: none; }
+    .modo-admin .config, .modo-admin .controles, .modo-admin .btn-admin, .modo-admin .btn-reset { display: block; }
     h1 { margin: 10px 0; color: #333; }
-
-    .config, .tempo {
-      background: white;
-      padding: 15px;
-      margin: 10px auto;
-      width: 95%;
-      max-width: 480px;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-
-    .marcador {
-      display: flex;
-      justify-content: space-around;
-      margin: 20px 0;
-    }
-
-    .equipo {
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      width: 45%;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-
-    .puntos {
-      font-size: 70px;
-      font-weight: bold;
-      margin: 10px 0;
-    }
-
-    .cronometro {
-      font-size: 48px;
-      font-family: monospace;
-      margin: 10px 0;
-    }
-
-    .controles button {
-      font-size: 18px;
-      margin: 4px;
-      padding: 10px 14px;
-    }
-
-    .btn-reset {
-      background-color: #ffeded;
-      color: #d9534f;
-      border: 1px solid #d9534f;
-      margin: 20px auto;
-      padding: 10px;
-      width: 200px;
-    }
-
-    /* MODO ESPECTADOR (SÓ MARCADOR) */
+    .config, .tempo { background: white; padding: 15px; margin: 10px auto; width: 95%; max-width: 480px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .marcador { display: flex; justify-content: space-around; margin: 20px 0; }
+    .equipo { background: white; padding: 20px; border-radius: 10px; width: 45%; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .puntos { font-size: 70px; font-weight: bold; margin: 10px 0; }
+    .cronometro { font-size: 48px; font-family: monospace; margin: 10px 0; }
+    .controles button { font-size: 18px; margin: 4px; padding: 10px 14px; }
+    .btn-reset { background-color: #ffeded; color: #d9534f; border: 1px solid #d9534f; margin: 20px auto; padding: 10px; width: 200px; }
     .so-marcador .config, .so-marcador h1 { display: none; }
     .so-marcador .puntos { font-size: 110px; }
     .so-marcador .cronometro { font-size: 70px; }
@@ -102,9 +38,9 @@
   <div>Tempo: <span id="tempoActual">-</span> / <span id="temposMax">-</span></div>
   <div class="cronometro" id="cronometro">00:00</div>
   <div class="controles">
-      <button onclick="iniciarCrono()">▶️</button>
-      <button onclick="pausarCrono()">⏸️</button>
-      <button onclick="seguinteTempo()">⏭️ Seguinte tempo</button>
+      <button onclick="iniciarCrono()">▶️ Iniciar</button>
+      <button onclick="pausarCrono()">⏸️ Pausar</button>
+      <button onclick="siguienteTempo()" style="background: #007bff; color: white; border: none; border-radius: 5px;">⏭️ Seguinte tempo</button>
   </div>
 </div>
 
@@ -138,18 +74,11 @@
 </div>
 
 <script>
-  // --- LÓGICA DE CONTROL DE VISTA ---
   const urlParams = new URLSearchParams(window.location.search);
   const esAdmin = urlParams.get('mode') === 'admin';
+  if (esAdmin) { document.body.classList.add('modo-admin'); } 
+  else { document.body.classList.add('so-marcador'); }
 
-  if (esAdmin) {
-    document.body.classList.add('modo-admin');
-  } else {
-    // Si no es admin, forzamos la vista limpia de "Só marcador"
-    document.body.classList.add('so-marcador');
-  }
-
-  // --- RESTO DE TU LÓGICA ---
   window.puntosA = 0;
   window.puntosB = 0;
   window.tempoActual = 0;
@@ -162,11 +91,19 @@
     window.totalTempos = parseInt(document.getElementById('totalTempos').value);
     window.duracionTempo = parseInt(document.getElementById('minutosTempo').value) * 60;
     window.tempoActual = 1;
+    
+    document.getElementById('labelB').innerText = document.getElementById('nomeB').value;
+    document.getElementById('labelB').style.color = document.getElementById('corB').value;
+    document.getElementById('puntosB').style.color = document.getElementById('corB').value;
+    document.getElementById('temposMax').innerText = window.totalTempos;
+    document.getElementById('tempoActual').innerText = window.tempoActual;
+
     reiniciarCrono();
     if(window.enviarAFirebase) window.enviarAFirebase();
   }
 
   function reiniciarCrono() {
+    pausarCrono(); // Detenemos cualquier contador activo
     window.segundosRestantes = window.duracionTempo;
     actualizarCrono();
   }
@@ -178,8 +115,7 @@
         window.segundosRestantes--;
         actualizarCrono();
       } else {
-        clearInterval(intervalo);
-        intervalo = null;
+        pausarCrono();
         alert("¡Fin do tempo!");
       }
     }, 1000);
@@ -198,11 +134,21 @@
       String(min).padStart(2, '0') + ":" + String(seg).padStart(2, '0');
   }
 
+  // --- FUNCIÓN MEJORADA: SALTA DE TIEMPO SIEMPRE ---
   function siguienteTempo() {
+    // Si no hemos iniciado el partido, cogemos los valores de los inputs
+    if (window.totalTempos === 0) {
+        window.totalTempos = parseInt(document.getElementById('totalTempos').value);
+        window.duracionTempo = parseInt(document.getElementById('minutosTempo').value) * 60;
+    }
+
     if (window.tempoActual < window.totalTempos) {
       window.tempoActual++;
-      reiniciarCrono();
+      document.getElementById('tempoActual').innerText = window.tempoActual;
+      reiniciarCrono(); // Esto detiene el reloj y pone los minutos del nuevo tiempo
       if(window.enviarAFirebase) window.enviarAFirebase();
+    } else {
+      alert("¡Xa estás no último tiempo!");
     }
   }
 
@@ -233,9 +179,7 @@
     }
   }
 
-  function toggleSoMarcador() {
-    document.body.classList.toggle('so-marcador');
-  }
+  function toggleSoMarcador() { document.body.classList.toggle('so-marcador'); }
 </script>
 
 <script type="module">
@@ -257,7 +201,6 @@
   const estadoRef = ref(db, 'partido/actual');
 
   window.enviarAFirebase = () => {
-    // Solo enviamos datos si somos admin para evitar sobrescrituras accidentales
     if (!esAdmin) return; 
     set(estadoRef, {
       puntosA: window.puntosA,
